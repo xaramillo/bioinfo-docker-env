@@ -1,8 +1,8 @@
-# Use an official Ubuntu as a parent image
-FROM ubuntu:20.04
+# Use an official Debian 12 as a parent image
+FROM debian:12
 
 # Set the maintainer label
-#LABEL maintainer="SolariaBiodata/Xaramillo"
+LABEL maintainer="xaramillo"
 
 # Avoid user interaction during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     git \
     python3 \
     python3-pip \
+    r-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Miniconda
@@ -31,13 +32,14 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 # Update PATH environment variable
 ENV PATH /opt/conda/bin:$PATH
 
-# Create and activate a new conda environment with bioinformatics tools
-RUN conda create -n bioinfo -y python=3.8 && \
-    echo "source activate bioinfo" > ~/.bashrc
+# Copy the Conda environment setup script
+COPY setup_conda.sh /setup_conda.sh
 
-# Install common bioinformatics tools
-RUN /bin/bash -c "source activate bioinfo && \
-    conda install -c bioconda fastqc bwa samtools"
+# Run the Conda environment setup script
+RUN bash /setup_conda.sh
+
+# Install Bioconductor packages
+RUN R -e "install.packages('BiocManager'); BiocManager::install(c('GenomicRanges', 'DESeq2'))"
 
 # Set the entrypoint
 ENTRYPOINT ["/bin/bash"]
