@@ -2,7 +2,7 @@
 FROM debian:12
 
 # Set the maintainer label
-LABEL maintainer="xaramillo"
+#LABEL maintainer="xaramillo"
 
 # Avoid user interaction during package installation
 ENV DEBIAN_FRONTEND=noninteractive
@@ -32,14 +32,16 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 # Update PATH environment variable
 ENV PATH /opt/conda/bin:$PATH
 
-# Copy the Conda environment setup script
-COPY setup_conda.sh /setup_conda.sh
+# Copy optional installation scripts
+COPY setup_conda.sh /scripts/setup_conda.sh
+COPY setup_r_bioconductor.sh /scripts/setup_r_bioconductor.sh
 
-# Run the Conda environment setup script
-RUN bash /setup_conda.sh
+# Make scripts executable
+RUN chmod +x /scripts/*.sh
 
-# Install Bioconductor packages
-RUN R -e "install.packages('BiocManager'); BiocManager::install(c('GenomicRanges', 'DESeq2'))"
+# Install basic bioinformatics tools
+RUN /scripts/setup_conda.sh && \
+    /scripts/setup_r_bioconductor.sh
 
-# Set the entrypoint
+# Set entrypoint
 ENTRYPOINT ["/bin/bash"]
